@@ -26,13 +26,16 @@ import com.android.internal.org.bouncycastle.cert.X509CertificateHolder;
 import com.android.internal.org.bouncycastle.cert.X509v3CertificateBuilder;
 import com.android.internal.org.bouncycastle.operator.ContentSigner;
 import com.android.internal.org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import com.android.internal.org.bouncycastle.util.io.pem.PemReader;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.StringReader;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
+
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -41,7 +44,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class KeyboxImitationHooks {
 
     private static final String TAG = "Luph-Keybox";
-    private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
+    private static boolean DEBUG = true;
 
     private static final Boolean sDisableKeyAttestationBlock = SystemProperties.getBoolean(
             "persist.sys.pihooks.disable.gms_key_attestation_block", false);
@@ -49,15 +52,20 @@ public class KeyboxImitationHooks {
     private static final ASN1ObjectIdentifier KEY_ATTESTATION_OID = new ASN1ObjectIdentifier(
             "1.3.6.1.4.1.11129.2.1.17");
 
-    private static PrivateKey parsePrivateKey(String encodedKey, String algorithm)
-            throws Exception {
-        byte[] keyBytes = Base64.getDecoder().decode(encodedKey);
-        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
-        return KeyFactory.getInstance(algorithm).generatePrivate(keySpec);
+    private static PrivateKey parsePrivateKey(String pemKey, String algorithm) throws Exception {
+        // Read the PEM-encoded private key
+        try (PemReader reader = new PemReader(new StringReader(pemKey))) {
+            byte[] keyBytes = reader.readPemObject().getContent();
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+            return KeyFactory.getInstance(algorithm).generatePrivate(keySpec);
+        }
     }
 
-    private static byte[] parseCertificate(String encodedCert) {
-        return Base64.getDecoder().decode(encodedCert);
+    private static byte[] parseCertificate(String pemCert) throws Exception {
+        // Read the PEM-encoded certificate
+        try (PemReader reader = new PemReader(new StringReader(pemCert))) {
+            return reader.readPemObject().getContent();
+        }
     }
 
     private static byte[] getCertificateChain(String algorithm) throws Exception {
@@ -187,6 +195,8 @@ public class KeyboxImitationHooks {
                 Log.e(TAG, "Key attestation OID not found, skipping modification");
                 return response;
             }
+
+            dlog("Spoofing key attestation");
 
             String keyAlgorithm = certificate.getPublicKey().getAlgorithm();
             response.metadata.certificate = modifyLeafCertificate(certificate, keyAlgorithm);
