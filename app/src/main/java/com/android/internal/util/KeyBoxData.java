@@ -1,7 +1,7 @@
 package com.android.internal.util;
 
 
-//Imitation of the original KeyProviderManager.java class.
+//Imitation of KeyProviderManager.java class.
 public class KeyBoxData {
     public static class CertItem {
         public String privateKey;
