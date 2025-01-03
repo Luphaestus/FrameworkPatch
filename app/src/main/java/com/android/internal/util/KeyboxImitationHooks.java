@@ -50,7 +50,7 @@ public class KeyboxImitationHooks {
     private static boolean DEBUG = true;
 
     private static final Boolean sDisableKeyAttestationBlock = SystemProperties.getBoolean(
-            "persist.sys.pihooks.disable.gms_key_attestation_block", false);
+            "persist.sys.vulcan.disable.gms_key_attestation_block", false);
 
     private static final ASN1ObjectIdentifier KEY_ATTESTATION_OID = new ASN1ObjectIdentifier(
             "1.3.6.1.4.1.11129.2.1.17");
@@ -68,7 +68,6 @@ public class KeyboxImitationHooks {
     }
 
     private static byte[] parseCertificate(String pemCert) throws Exception {
-        // Read the PEM-encoded certificate
         try (PemReader reader = new PemReader(new StringReader(pemCert))) {
             return reader.readPemObject().getContent();
         }
