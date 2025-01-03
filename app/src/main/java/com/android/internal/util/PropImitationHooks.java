@@ -98,13 +98,10 @@ public class PropImitationHooks {
             "com.google.android.apps.weather",
             "com.google.android.gms",
             "com.google.android.googlequicksearchbox",
-            "com.google.android.soundpicker",
             "com.google.android.wallpaper.effects",
             "com.google.pixel.livewallpaper",
             "com.microsoft.android.smsorganizer",
             "com.nhs.online.nhsonline",
-            "com.nothing.smartcenter",
-            "com.realme.link",
             "in.startv.hotstar",
             "jp.id_credit_sp2.android"
     };
@@ -299,22 +296,6 @@ public class PropImitationHooks {
 
     public static void onEngineGetCertificateChain() {
         dlog("onEngineGetCertificateChain");
-        if (sDisableKeyAttestationBlock) {
-            dlog("Key attestation blocking is disabled by user");
-            return;
-        }
-
-        // If a keybox is found, don't block key attestation
-        if (KeyProviderManager.isKeyboxAvailable()) {
-            dlog("Key attestation blocking is disabled because a keybox is defined to spoof");
-            return;
-        }
-
-        // Check stack for SafetyNet or Play Integrity
-        if (isCallerSafetyNet() || sIsFinsky) {
-            dlog("Blocked key attestation sIsGms=" + sIsGms + " sIsFinsky=" + sIsFinsky);
-            throw new UnsupportedOperationException();
-        }
     }
 
     public static boolean hasSystemFeature(String name, boolean has) {

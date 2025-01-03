@@ -1,6 +1,4 @@
 -repackageclasses 'com.android.internal.util'
 -keep class com.android.internal.util.KeyboxImitationHooks {public *;}
--keep class com.android.internal.util.IKeyboxProvider {public *;}
--keep class com.android.internal.util.KeyProviderManager {public *;}
 -keep class com.android.internal.util.PropImitationHooks {public *;}
 -keep class com.android.internal.util.KeyBoxData {public *;}

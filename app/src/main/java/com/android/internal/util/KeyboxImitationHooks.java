@@ -10,23 +10,22 @@ import android.security.keystore.KeyProperties;
 import android.system.keystore2.KeyEntryResponse;
 import android.util.Log;
 
-import org.lsposed.lsparanoid.Obfuscate;
-import org.spongycastle.asn1.ASN1Boolean;
-import org.spongycastle.asn1.ASN1Encodable;
-import org.spongycastle.asn1.ASN1EncodableVector;
-import org.spongycastle.asn1.ASN1Enumerated;
-import org.spongycastle.asn1.ASN1ObjectIdentifier;
-import org.spongycastle.asn1.ASN1OctetString;
-import org.spongycastle.asn1.ASN1Sequence;
-import org.spongycastle.asn1.ASN1TaggedObject;
-import org.spongycastle.asn1.DEROctetString;
-import org.spongycastle.asn1.DERSequence;
-import org.spongycastle.asn1.DERTaggedObject;
-import org.spongycastle.asn1.x509.Extension;
-import org.spongycastle.cert.X509CertificateHolder;
-import org.spongycastle.cert.X509v3CertificateBuilder;
-import org.spongycastle.operator.ContentSigner;
-import org.spongycastle.operator.jcajce.JcaContentSignerBuilder;
+import com.android.internal.org.bouncycastle.asn1.ASN1Boolean;
+import com.android.internal.org.bouncycastle.asn1.ASN1Encodable;
+import com.android.internal.org.bouncycastle.asn1.ASN1EncodableVector;
+import com.android.internal.org.bouncycastle.asn1.ASN1Enumerated;
+import com.android.internal.org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import com.android.internal.org.bouncycastle.asn1.ASN1OctetString;
+import com.android.internal.org.bouncycastle.asn1.ASN1Sequence;
+import com.android.internal.org.bouncycastle.asn1.ASN1TaggedObject;
+import com.android.internal.org.bouncycastle.asn1.DEROctetString;
+import com.android.internal.org.bouncycastle.asn1.DERSequence;
+import com.android.internal.org.bouncycastle.asn1.DERTaggedObject;
+import com.android.internal.org.bouncycastle.asn1.x509.Extension;
+import com.android.internal.org.bouncycastle.cert.X509CertificateHolder;
+import com.android.internal.org.bouncycastle.cert.X509v3CertificateBuilder;
+import com.android.internal.org.bouncycastle.operator.ContentSigner;
+import com.android.internal.org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 import java.io.ByteArrayOutputStream;
 import java.security.KeyFactory;
@@ -36,18 +35,16 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 import java.util.concurrent.ThreadLocalRandom;
 
-
 /**
  * @hide
  */
-@Obfuscate
 public class KeyboxImitationHooks {
 
-    private static final String TAG = "Luph-ImitationHooks";
-    private static final boolean DEBUG = true;
+    private static final String TAG = "Luph-Keybox";
+    private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
 
-    private static final Boolean sDisableKeyAttestationBlock = true;
-//            SystemProperties.getBoolean("persist.sys.vulcan.disable.gms_key_attestation_block", false);
+    private static final Boolean sDisableKeyAttestationBlock = SystemProperties.getBoolean(
+            "persist.sys.pihooks.disable.gms_key_attestation_block", false);
 
     private static final ASN1ObjectIdentifier KEY_ATTESTATION_OID = new ASN1ObjectIdentifier(
             "1.3.6.1.4.1.11129.2.1.17");
@@ -64,10 +61,10 @@ public class KeyboxImitationHooks {
     }
 
     private static byte[] getCertificateChain(String algorithm) throws Exception {
-        IKeyboxProvider provider = KeyProviderManager.getProvider();
+        KeyBoxData keyBoxData = KeyBoxData.getKeyBoxData();
         String[] certChain = KeyProperties.KEY_ALGORITHM_EC.equals(algorithm)
-                ? provider.getEcCertificateChain()
-                : provider.getRsaCertificateChain();
+                ? keyBoxData.EC.certificates
+                : keyBoxData.RSA.certificates;
 
         ByteArrayOutputStream certificateStream = new ByteArrayOutputStream();
         for (String cert : certChain) {
@@ -77,20 +74,19 @@ public class KeyboxImitationHooks {
     }
 
     private static PrivateKey getPrivateKey(String algorithm) throws Exception {
-        IKeyboxProvider provider = KeyProviderManager.getProvider();
+        KeyBoxData keyBoxData = KeyBoxData.getKeyBoxData();
         String privateKeyEncoded = KeyProperties.KEY_ALGORITHM_EC.equals(algorithm)
-                ? provider.getEcPrivateKey()
-                : provider.getRsaPrivateKey();
+                ? keyBoxData.EC.privateKey
+                : keyBoxData.RSA.privateKey;
 
         return parsePrivateKey(privateKeyEncoded, algorithm);
     }
 
     private static X509CertificateHolder getCertificateHolder(String algorithm) throws Exception {
-        IKeyboxProvider provider = KeyProviderManager.getProvider();
+        KeyBoxData keyBoxData = KeyBoxData.getKeyBoxData();
         String certChain = KeyProperties.KEY_ALGORITHM_EC.equals(algorithm)
-                ? provider.getEcCertificateChain()[0]
-                : provider.getRsaCertificateChain()[0];
-
+                ? keyBoxData.EC.certificates[0]
+                : keyBoxData.RSA.certificates[0];
         return new X509CertificateHolder(parseCertificate(certChain));
     }
 
@@ -175,12 +171,6 @@ public class KeyboxImitationHooks {
     public static KeyEntryResponse onGetKeyEntry(KeyEntryResponse response) {
         if (sDisableKeyAttestationBlock) {
             dlog("Key attestation spoofing is disabled by user");
-            return response;
-        }
-
-        // If no keybox is found, don't continue spoofing
-        if (!KeyProviderManager.isKeyboxAvailable()) {
-            dlog("Key attestation spoofing is disabled because no keybox is defined to spoof");
             return response;
         }
 
