@@ -28,6 +28,9 @@ import com.android.internal.org.bouncycastle.operator.ContentSigner;
 import com.android.internal.org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import com.android.internal.org.bouncycastle.util.io.pem.PemReader;
 
+import org.spongycastle.openssl.PEMKeyPair;
+import org.spongycastle.openssl.PEMParser;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
@@ -53,9 +56,12 @@ public class KeyboxImitationHooks {
             "1.3.6.1.4.1.11129.2.1.17");
 
     private static PrivateKey parsePrivateKey(String pemKey, String algorithm) throws Exception {
-        // Read the PEM-encoded private key
-        try (PemReader reader = new PemReader(new StringReader(pemKey))) {
-            byte[] keyBytes = reader.readPemObject().getContent();
+        Log.e(TAG, "Parsing private key");
+        Log.e(TAG, pemKey);
+        Log.e(TAG, algorithm);
+        try (PEMParser parser = new PEMParser(new StringReader(pemKey))) {
+            PEMKeyPair keyPair = (PEMKeyPair) parser.readObject();
+            byte[] keyBytes = keyPair.getPrivateKeyInfo().getEncoded();
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
             return KeyFactory.getInstance(algorithm).generatePrivate(keySpec);
         }

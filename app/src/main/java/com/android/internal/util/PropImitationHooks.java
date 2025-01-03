@@ -263,7 +263,10 @@ public class PropImitationHooks {
     }
 
     public static boolean shouldBypassTaskPermission(Context context) {
-
+        if (context == null) {
+            Log.e(TAG, "shouldBypassTaskPermission: context is null");
+            return false;
+        }
 
         if (sDisableGmsProps) {
             dlog("Task permission bypass is disabled");
