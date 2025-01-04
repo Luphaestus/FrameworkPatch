@@ -108,7 +108,7 @@ public class KeyboxImitationHooks {
                                                 String keyAlgorithm) throws Exception {
         // These have to be set to the security patch level date and version of your ROM
         int osVersionLevelVal = 140000;
-        int osPatchLevelVal = 20241001;
+        int osPatchLevelVal = 202410;
         int bootorvendorPatchlevelVal = 20241001;
 
         X509CertificateHolder certificateHolder = new X509CertificateHolder(
