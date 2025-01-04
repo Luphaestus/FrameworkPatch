@@ -50,4 +50,3 @@ public class KeyBoxData {
         return strongKeyBoxData != null ? strongKeyBoxData : getAospKeyBoxData();
     }
 }
-

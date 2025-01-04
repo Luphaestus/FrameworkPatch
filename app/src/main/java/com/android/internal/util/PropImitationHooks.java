@@ -50,9 +50,6 @@ public class PropImitationHooks {
 
     private static final Boolean sDisableGmsProps = SystemProperties.getBoolean("persist.sys.vulcan.disable.gms_props", false);
 
-    private static final Boolean sDisableKeyAttestationBlock = SystemProperties.getBoolean(
-            "persist.sys.vulcan.disable.gms_key_attestation_block", false);
-
     private static final String PACKAGE_ARCORE = "com.google.ar.core";
     private static final String PACKAGE_FINSKY = "com.android.vending";
     private static final String PACKAGE_GMS = "com.google.android.gms";
@@ -118,9 +115,8 @@ public class PropImitationHooks {
         return List.of(
                 "FINGERPRINT:" + fingerprint,
                 "BRAND:" + parts[0],
-                "DEVICE:" + parts[1],
                 "PRODUCT:" + parts[1],
-                "HARDWARE:" + parts[1],
+                "DEVICE:" + parts[2].split(":")[0],
                 "VERSION.RELEASE:" + parts[2].split(":")[1],
                 "ID:" + parts[3],
                 "VERSION.INCREMENTAL:" + parts[4].split(":")[0],
@@ -144,11 +140,11 @@ public class PropImitationHooks {
             return;
         }
 
-        sCertifiedProps = new ArrayList<>(parseFingerprint(SystemProperties.get("persist.sys.vulcan.FINGERPRINT", "google/sailfish/sailfish:8.1.0/OPM1.171019.011/4448085:user/release-keys")));
-        sCertifiedProps.add("MODEL:" + SystemProperties.get("persist.sys.vulcan.MODEL", "Pixel"));
+        sCertifiedProps = new ArrayList<>(parseFingerprint(SystemProperties.get("persist.sys.vulcan.FINGERPRINT", "google/oriole_beta/oriole:Baklava/BP21.241121.009/12787338:user/release-keys")));
+        sCertifiedProps.add("MODEL:" + SystemProperties.get("persist.sys.vulcan.MODEL", "Pixel 6"));
         sCertifiedProps.add("MANUFACTURER:" + SystemProperties.get("persist.sys.vulcan.MANUFACTURER", "Google"));
-        sCertifiedProps.add("VERSION.SECURITY_PATCH:" + SystemProperties.get("persist.sys.vulcan.security_patch", "2022-01-05"));
-        sCertifiedProps.add("VERSION.DEVICE_INITIAL_SDK_INT:" + SystemProperties.get("persist.sys.vulcan.first_api_level", "30"));
+        sCertifiedProps.add("VERSION.SECURITY_PATCH:" + SystemProperties.get("persist.sys.vulcan.security_patch", "2024-12-05"));
+        sCertifiedProps.add("VERSION.DEVICE_INITIAL_SDK_INT:" + SystemProperties.get("persist.sys.vulcan.first_api_level", "21"));
 
         recentPixel = new ArrayList<>(parseFingerprint("google/komodo/komodo:15/AP4A.241205.013/12621605:user/release-keys"));
         recentPixel.add("MANUFACTURER:Google");
@@ -166,6 +162,7 @@ public class PropImitationHooks {
         sIsPhotos = packageName.equals(PACKAGE_GPHOTOS);
 
         if (sIsGms) {
+            dlog("Setting props for GMS");
             setCertifiedPropsForGms();
         } else if (Arrays.asList(packagesToChangeToPixelXL).contains(packageName)) {
             dlog("Setting model to Pixel XL for " + packageName);
@@ -284,12 +281,6 @@ public class PropImitationHooks {
         }
         dlog("shouldBypassTaskPermission: gmsUid:" + gmsUid + " callingUid:" + callingUid);
         return gmsUid == callingUid;
-    }
-
-    private static boolean isCallerSafetyNet() {
-        dlog("isCallerSafetyNet: sIsGms=" + sIsGms);
-        return sIsGms && Arrays.stream(Thread.currentThread().getStackTrace())
-                .anyMatch(elem -> elem.getClassName().contains("DroidGuard"));
     }
 
     public static void onEngineGetCertificateChain() {
