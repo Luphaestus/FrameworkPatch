@@ -14,6 +14,7 @@ import com.android.internal.org.bouncycastle.asn1.ASN1Boolean;
 import com.android.internal.org.bouncycastle.asn1.ASN1Encodable;
 import com.android.internal.org.bouncycastle.asn1.ASN1EncodableVector;
 import com.android.internal.org.bouncycastle.asn1.ASN1Enumerated;
+import com.android.internal.org.bouncycastle.asn1.ASN1Integer;
 import com.android.internal.org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import com.android.internal.org.bouncycastle.asn1.ASN1OctetString;
 import com.android.internal.org.bouncycastle.asn1.ASN1Sequence;
@@ -105,6 +106,11 @@ public class KeyboxImitationHooks {
 
     private static byte[] modifyLeafCertificate(X509Certificate leafCertificate,
                                                 String keyAlgorithm) throws Exception {
+        // These have to be set to the security patch level date and version of your ROM
+        int osVersionLevelVal = 140000;
+        int osPatchLevelVal = 20241001;
+        int bootorvendorPatchlevelVal = 20241001;
+
         X509CertificateHolder certificateHolder = new X509CertificateHolder(
                 leafCertificate.getEncoded());
         Extension keyAttestationExtension = certificateHolder.getExtension(KEY_ATTESTATION_OID);
@@ -117,10 +123,11 @@ public class KeyboxImitationHooks {
         ASN1Sequence rootOfTrustSequence = null;
         for (ASN1Encodable teeEnforcedEncodable : teeEnforcedSequence) {
             ASN1TaggedObject taggedObject = (ASN1TaggedObject) teeEnforcedEncodable;
-            if (taggedObject.getTagNo() == 704) {
+            var tag = taggedObject.getTagNo();
+            if (tag == 704) {
                 rootOfTrustSequence = (ASN1Sequence) taggedObject.getObject();
                 continue;
-            }
+            } else if (tag == 705 || tag == 706 || tag == 718 || tag == 719) continue;
             teeEnforcedVector.add(teeEnforcedEncodable);
         }
 
@@ -161,6 +168,24 @@ public class KeyboxImitationHooks {
         ASN1Sequence newRootOfTrustSequence = new DERSequence(rootOfTrustEncodables);
         ASN1TaggedObject rootOfTrustTaggedObject = new DERTaggedObject(704, newRootOfTrustSequence);
         teeEnforcedVector.add(rootOfTrustTaggedObject);
+
+        // Spoof OS Version
+        ASN1Encodable osVersionlevelEnc = new ASN1Integer(osVersionLevelVal);
+        ASN1TaggedObject osVersionLevelObj = new DERTaggedObject(705, osVersionlevelEnc);
+        teeEnforcedVector.add(osVersionLevelObj);
+        // Spoof OS Patch Level
+        ASN1Encodable osPatchLevelEnc = new ASN1Integer(osPatchLevelVal);
+        ASN1TaggedObject osPatchLevelObj = new DERTaggedObject(706, osPatchLevelEnc);
+        teeEnforcedVector.add(osPatchLevelObj);
+        // Spoof Vendor Patch Level
+        ASN1Encodable vendorPatchLevelEnc = new ASN1Integer(bootorvendorPatchlevelVal);
+        ASN1TaggedObject vendorPatchLevelObj = new DERTaggedObject(718, vendorPatchLevelEnc);
+        teeEnforcedVector.add(vendorPatchLevelObj);
+        // Spoof Boot Patch Level
+        ASN1Encodable bootPatchLevelEnc = new ASN1Integer(bootorvendorPatchlevelVal);
+        ASN1TaggedObject bootPatchLevelObj = new DERTaggedObject(719, bootPatchLevelEnc);
+        teeEnforcedVector.add(bootPatchLevelObj);
+
 
         ASN1Sequence newTeeEnforcedSequence = new DERSequence(teeEnforcedVector);
         keyAttestationEncodables[7] = newTeeEnforcedSequence;
