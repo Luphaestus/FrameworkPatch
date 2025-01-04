@@ -1,6 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2024 Paranoid Android
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileContributor: Luphaestus - Vulcanizer
  */
 package com.android.internal.util;
 
