@@ -16,8 +16,35 @@ package com.android.internal.util;
  */
 
 
+import android.media.audio.common.Int;
+import android.os.FileUtils;
+import android.util.Log;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.File;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.Base64;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 //Imitation of KeyProviderManager.java class.
 public class KeyBoxData {
+    private static final String TAG = "Luph-KeyBoxData";
+    private static final boolean DEBUG = true;
+
     public static class CertItem {
         public String privateKey;
         public String[] certificates;
@@ -55,13 +82,89 @@ public class KeyBoxData {
         );
     }
 
+    private static String readFileContent(File file) {
+        StringBuilder content = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Error reading file content", e);
+        }
+        return content.toString();
+    }
 
     private static KeyBoxData getUserKeyBox() {
-        return null;
+        try{
+            String KEYBOX_PATH = "/data/system/keybox.xml";
+            File keyBoxFile = new File(KEYBOX_PATH);
+            if (keyBoxFile.exists()) {
+                String keyboxStringEnc;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    keyboxStringEnc = FileUtils.readTextFile(new File(KEYBOX_PATH), 0, null);
+                } else {
+                    keyboxStringEnc = readFileContent(new File(KEYBOX_PATH));
+                }
+
+                String password = KeyBoxPassword.PASSWORD;
+                byte[] key = generateKey(password);
+                SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
+                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                byte[] iv = new byte[cipher.getBlockSize()];
+                System.arraycopy(KeyBoxPassword.fixedIv, 0, iv, 0, iv.length);
+                IvParameterSpec ivParams = new IvParameterSpec(iv);
+                cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParams);
+                byte[] keyboxBytes = Base64.getDecoder().decode(keyboxStringEnc);
+                byte[] keyboxDecrypted = cipher.doFinal(keyboxBytes);
+                String keyboxString = new String(keyboxDecrypted, StandardCharsets.UTF_8);
+
+                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder builder = factory.newDocumentBuilder();
+                Document document = builder.parse(new InputSource(new StringReader(keyboxString)));
+
+                NodeList privateKeyNodes = document.getElementsByTagName("PrivateKey");
+                String EC_PRIVATE_KEY = privateKeyNodes.item(0).getTextContent();
+                String RSA_PRIVATE_KEY = privateKeyNodes.item(1).getTextContent();
+
+
+                NodeList certificateNodes = document.getElementsByTagName("Certificate");
+                int numbCertsPerEnc = certificateNodes.getLength()/2;
+                String[] EC_CERTIFICATES = new String[numbCertsPerEnc];
+                String[] RSA_CERTIFICATES = new String[numbCertsPerEnc];
+                for (int i = 0; i < numbCertsPerEnc; i++) {
+                    EC_CERTIFICATES[i] = certificateNodes.item(i).getTextContent();
+                    RSA_CERTIFICATES[i] = certificateNodes.item(i + numbCertsPerEnc).getTextContent();
+                }
+
+                return new KeyBoxData(
+                        new KeyBoxData.CertItem(EC_PRIVATE_KEY, EC_CERTIFICATES),
+                        new KeyBoxData.CertItem(RSA_PRIVATE_KEY, RSA_CERTIFICATES)
+                );
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error reading keybox", e);
+            return null;
+        }
+
     }
 
     public static KeyBoxData getKeyBoxData() {
-        KeyBoxData strongKeyBoxData = getUserKeyBox();
-        return strongKeyBoxData != null ? strongKeyBoxData : getAospKeyBoxData();
+        KeyBoxData userKeyBoxData = getUserKeyBox();
+        return userKeyBoxData != null ? userKeyBoxData : getAospKeyBoxData();
     }
+
+    private static byte[] generateKey(String password) throws Exception {
+        MessageDigest sha = MessageDigest.getInstance("SHA-256");
+        return sha.digest(password.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static void dlog(String msg) {
+        if (DEBUG) {
+            android.util.Log.d(TAG, msg);
+        }
+    }
+
 }
