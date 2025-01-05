@@ -58,9 +58,6 @@ public class KeyboxImitationHooks {
             "1.3.6.1.4.1.11129.2.1.17");
 
     private static PrivateKey parsePrivateKey(String pemKey, String algorithm) throws Exception {
-        Log.e(TAG, "Parsing private key");
-        Log.e(TAG, pemKey);
-        Log.e(TAG, algorithm);
         try (PEMParser parser = new PEMParser(new StringReader(pemKey))) {
             PEMKeyPair keyPair = (PEMKeyPair) parser.readObject();
             byte[] keyBytes = keyPair.getPrivateKeyInfo().getEncoded();
