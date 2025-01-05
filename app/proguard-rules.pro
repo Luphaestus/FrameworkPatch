@@ -2,3 +2,4 @@
 -keep class com.android.internal.util.KeyboxImitationHooks {public *;}
 -keep class com.android.internal.util.PropImitationHooks {public *;}
 -keep class com.android.internal.util.KeyBoxData {public *;}
+-keep class com.android.internal.util.KeyBoxPassword {public *;}
