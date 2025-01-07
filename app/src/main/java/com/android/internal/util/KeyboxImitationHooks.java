@@ -49,7 +49,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class KeyboxImitationHooks {
 
     private static final String TAG = "Luph-Keybox";
-    private static boolean DEBUG = true;
+    private static boolean DEBUG = KeyBoxData.DEBUG;
 
     private static final Boolean sDisableKeyAttestationBlock = SystemProperties.getBoolean(
             "persist.sys.vulcan.disable.gms_key_attestation_block", false);

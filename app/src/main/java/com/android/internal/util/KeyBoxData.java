@@ -43,7 +43,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 //Imitation of KeyProviderManager.java class.
 public class KeyBoxData {
     private static final String TAG = "Luph-KeyBoxData";
-    private static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     public static class CertItem {
         public String privateKey;
