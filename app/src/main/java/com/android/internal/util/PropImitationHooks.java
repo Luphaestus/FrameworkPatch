@@ -51,8 +51,6 @@ public class PropImitationHooks {
 
     private static final Boolean sDisableGmsProps = SystemProperties.getBoolean("persist.sys.vulcan.disable.gms_props", false);
 
-    private static final String PACKAGE_ARCORE = "com.google.ar.core";
-    private static final String PACKAGE_FINSKY = "com.android.vending";
     private static final String PACKAGE_GMS = "com.google.android.gms";
     private static final String PROCESS_GMS_UNSTABLE = PACKAGE_GMS + ".unstable";
 
