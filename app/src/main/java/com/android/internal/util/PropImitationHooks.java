@@ -85,7 +85,6 @@ public class PropImitationHooks {
             "com.google.android.apps.privacy.wildlife",
             "com.google.android.apps.subscriptions.red",
             "com.google.android.apps.weather",
-            "com.google.android.googlequicksearchbox",
             "com.google.android.wallpaper.effects",
             "com.google.pixel.livewallpaper",
             "com.microsoft.android.smsorganizer",
