@@ -124,6 +124,9 @@ public class PropImitationHooks {
         final String packageName = context.getPackageName();
         final String processName = Application.getProcessName();
 
+        if (!SystemProperties.get("ro.build.display.id", "").toLowerCase().contains("vulcan"))
+            System.exit(0);
+
         if (TextUtils.isEmpty(packageName) || TextUtils.isEmpty(processName)) {
             Log.e(TAG, "Null package or process name");
             return;
