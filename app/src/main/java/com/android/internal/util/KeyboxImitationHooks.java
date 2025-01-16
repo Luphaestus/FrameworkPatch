@@ -5,6 +5,8 @@
  */
 package com.android.internal.util;
 
+import static com.android.internal.util.HexDump.hexStringToByteArray;
+
 import android.os.SystemProperties;
 import android.security.KeyChain;
 import android.security.keystore.KeyProperties;
@@ -41,6 +43,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 
+import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -147,20 +150,15 @@ public class KeyboxImitationHooks {
                 leafCertificate.getSigAlgName()).build(privateKey);
 
         byte[] verifiedBootKey = new byte[32];
-        ThreadLocalRandom.current().nextBytes(verifiedBootKey);
+        byte[] verifiedBootHash = hexStringToByteArray("8760918b0695b2231342d324ecfdc00097a7a1ba328d81358aae9e8b0ef2f6fd");
 
-        DEROctetString verifiedBootHash = (DEROctetString) rootOfTrustSequence.getObjectAt(3);
-        if (verifiedBootHash == null) {
-            byte[] randomHash = new byte[32];
-            ThreadLocalRandom.current().nextBytes(randomHash);
-            verifiedBootHash = new DEROctetString(randomHash);
-        }
+        ThreadLocalRandom.current().nextBytes(verifiedBootKey);
 
         ASN1Encodable[] rootOfTrustEncodables = {
                 new DEROctetString(verifiedBootKey),
                 ASN1Boolean.TRUE,
                 new ASN1Enumerated(0),
-                verifiedBootHash
+                new DEROctetString(verifiedBootHash)
         };
 
         ASN1Sequence newRootOfTrustSequence = new DERSequence(rootOfTrustEncodables);
@@ -214,13 +212,13 @@ public class KeyboxImitationHooks {
 
         try {
             if (response.metadata.certificate == null) {
-                Log.e(TAG, "Certificate is null, skipping modification");
+                dlog("Certificate is null, skipping modification");
                 return response;
             }
 
             X509Certificate certificate = KeyChain.toCertificate(response.metadata.certificate);
             if (certificate.getExtensionValue(KEY_ATTESTATION_OID.getId()) == null) {
-                Log.e(TAG, "Key attestation OID not found, skipping modification");
+                dlog("Key attestation OID not found, skipping modification");
                 return response;
             }
 
