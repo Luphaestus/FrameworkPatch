@@ -155,7 +155,7 @@ public class PropImitationHooks {
         sProcessName = processName;
         sIsGms = packageName.equals(PACKAGE_GMS) && processName.equals(PROCESS_GMS_UNSTABLE);
 
-        if (sIsGms) {
+        if (sIsGms || packageName.equals("com.google.android.gsf")) {
             dlog("Setting props for GMS");
             setCertifiedPropsForGms();
         } else if (Arrays.asList(packagesToChangeToPixelXL).contains(packageName)) {
