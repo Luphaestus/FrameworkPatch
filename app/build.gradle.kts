@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.lsposed.lsparanoid")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -29,8 +30,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
 }
 
 dependencies {
     implementation("com.madgag.spongycastle:bcpkix-jdk15on:1.58.0.0")
+    implementation("androidx.core:core-ktx:1.15.0")
 }
